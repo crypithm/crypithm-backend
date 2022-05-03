@@ -1,0 +1,101 @@
+package preupload
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"log"
+	"math/rand"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+
+	_ "github.com/go-sql-driver/mysql"
+
+	"github.com/go-redis/redis"
+)
+
+type Response struct {
+	StatusMessage string
+}
+
+func randstring(length int) string {
+
+	var fin []string
+	str := "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ1234567890"
+	chars := strings.Split(str, "")
+	rand.Seed(time.Now().UnixNano())
+	for i := 0; i < length+1; i++ {
+		fin = append(fin, chars[rand.Intn(26*2+10)])
+	}
+	return strings.Join(fin, "")
+}
+
+func Prehandle(w http.ResponseWriter, r *http.Request) {
+	var message []byte
+	var recievedVals []string
+	if r.Method != "POST" {
+		var resp Response
+		resp.StatusMessage = "Inallowed Method"
+		message, _ = json.Marshal(resp)
+	} else {
+		token := r.Header.Get("Authorization")
+
+		db, err := sql.Open("mysql", "crypithm:cDP9gNEQmUQt7qXbzU7XJ3Xz4mmcMf@tcp(127.0.0.1:3306)/crypithm")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+
+		rows, err := db.Query("SELECT uid FROM user WHERE token=?", token)
+
+		if !rows.Next() {
+			message, _ = json.Marshal(Response{"Error"})
+			fmt.Fprintf(w, string(message))
+		} else {
+			recievedVals[0] = r.FormValue("fileSize")
+			recievedVals[1] = r.FormValue("fileName")
+			recievedVals[2] = r.FormValue("chunkKey")
+			recievedVals[3] = r.FormValue("id")
+
+			for i := 0; i < len(recievedVals); i++ {
+				if len(recievedVals[i]) == 0 {
+					message, _ = json.Marshal(Response{"Error"})
+					fmt.Fprintf(w, string(message))
+				}
+			}
+			var uid string
+			rows.Scan(&uid)
+
+			fileName := randstring(16)
+			file, e := os.Create("/storedblob" + fileName)
+			if e != nil {
+				message, _ = json.Marshal(Response{"Error"})
+				fmt.Fprintf(w, string(message))
+			}
+			defer file.Close()
+			_, e = db.Exec("INSERT INTO files (size, name,blobkey,id,directory,userid) values (?,?,?,?,?,?)", recievedVals[0], recievedVals[1], recievedVals[2], recievedVals[3], "", uid)
+			if e != nil {
+				message, _ = json.Marshal(Response{"Error"})
+				fmt.Fprintf(w, string(message))
+			}
+			var ctx = context.Background()
+
+			rdb := redis.NewClient(&redis.Options{
+				Addr:     "localhost:6379",
+				Password: "",
+				DB:       0,
+			})
+
+			e = rdb.Set(ctx, token, fileName, 0).Err()
+			if e != nil {
+				message, _ = json.Marshal(Response{"Error"})
+				fmt.Fprintf(w, string(message))
+			}
+		}
+
+	}
+	fmt.Fprintf(w, string(message))
+}
