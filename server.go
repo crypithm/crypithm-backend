@@ -11,7 +11,7 @@ import (
 func main() {
 	http.HandleFunc("/api/upload", upload.Uploadhandle)
 	http.HandleFunc("/api/pre", preupload.Prehandle)
-	err := http.ListenAndServe(":1234", nil)
+	err := http.ListenAndServe(":22048", nil)
 	if err != nil {
 		fmt.Println(err)
 	}

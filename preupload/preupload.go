@@ -35,22 +35,25 @@ func randstring(length int) string {
 
 func Prehandle(w http.ResponseWriter, r *http.Request) {
 	var message []byte
-	var recievedVals []string
+	var recievedVals [4]string
 	if r.Method != "POST" {
 		var resp Response
 		resp.StatusMessage = "Inallowed Method"
 		message, _ = json.Marshal(resp)
 	} else {
 		token := r.Header.Get("Authorization")
-
-		db, err := sql.Open("mysql", "crypithm:cDP9gNEQmUQt7qXbzU7XJ3Xz4mmcMf@tcp(127.0.0.1:3306)/crypithm")
+		if len(token) == 0 {
+			message, _ = json.Marshal(Response{"Error"})
+			fmt.Fprintf(w, string(message))
+		}
+		db, err := sql.Open("mysql", "crypithmusr:cDP9gNEQmUQt7qXbzU7XJ3Xz4mmcMf@tcp(127.0.0.1:3306)/crypithm")
 		if err != nil {
 			log.Fatal(err)
 		}
 		defer db.Close()
 
 		rows, err := db.Query("SELECT uid FROM user WHERE token=?", token)
-
+		defer rows.Close()
 		if !rows.Next() {
 			message, _ = json.Marshal(Response{"Error"})
 			fmt.Fprintf(w, string(message))
@@ -64,21 +67,22 @@ func Prehandle(w http.ResponseWriter, r *http.Request) {
 				if len(recievedVals[i]) == 0 {
 					message, _ = json.Marshal(Response{"Error"})
 					fmt.Fprintf(w, string(message))
+					break
 				}
 			}
 			var uid string
 			rows.Scan(&uid)
 
 			fileName := randstring(16)
-			file, e := os.Create("/storedblob" + fileName)
+			file, e := os.Create("/storedblob/" + fileName)
 			if e != nil {
-				message, _ = json.Marshal(Response{"Error"})
+				message, _ = json.Marshal(Response{"saveError"})
 				fmt.Fprintf(w, string(message))
 			}
 			defer file.Close()
 			_, e = db.Exec("INSERT INTO files (size, name,blobkey,id,directory,userid) values (?,?,?,?,?,?)", recievedVals[0], recievedVals[1], recievedVals[2], recievedVals[3], "", uid)
 			if e != nil {
-				message, _ = json.Marshal(Response{"Error"})
+				message, _ = json.Marshal(Response{"dbinsError"})
 				fmt.Fprintf(w, string(message))
 			}
 			var ctx = context.Background()
@@ -88,12 +92,13 @@ func Prehandle(w http.ResponseWriter, r *http.Request) {
 				Password: "",
 				DB:       0,
 			})
-
-			e = rdb.Set(ctx, token, fileName, 0).Err()
+			fileToken := randstring(20)
+			e = rdb.Set(ctx, fileToken, fileName, 0).Err()
 			if e != nil {
-				message, _ = json.Marshal(Response{"Error"})
+				message, _ = json.Marshal(Response{"redisError"})
 				fmt.Fprintf(w, string(message))
 			}
+			message, _ = json.Marshal(Response{fileToken})
 		}
 
 	}

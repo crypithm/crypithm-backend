@@ -50,7 +50,7 @@ func Uploadhandle(w http.ResponseWriter, r *http.Request) {
 		//Get real filename from redis!(var token)
 
 		fileName := val
-		target, e := os.OpenFile("/storedblob"+fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		target, e := os.OpenFile("/storedblob/"+fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if e != nil {
 			message, _ = json.Marshal(Response{"Error"})
 			fmt.Fprintf(w, string(message))
