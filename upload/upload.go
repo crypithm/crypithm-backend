@@ -39,13 +39,12 @@ func Uploadhandle(w http.ResponseWriter, r *http.Request) {
 			Password: "",
 			DB:       0,
 		})
-
+		//use content-length header
 		val, e := rdb.Get(ctx, token).Result()
 		if e != nil {
 			message, _ = json.Marshal(Response{"Error"})
 			fmt.Fprintf(w, string(message))
 		}
-
 		uploadedBytes, _ := ioutil.ReadAll(file)
 		//Get real filename from redis!(var token)
 
