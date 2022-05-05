@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/go-redis/redis"
 )
@@ -30,6 +32,7 @@ func Uploadhandle(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			message, _ = json.Marshal(Response{"Error"})
 			fmt.Fprintf(w, string(message))
+			return
 		}
 
 		var ctx = context.Background()
@@ -44,17 +47,28 @@ func Uploadhandle(w http.ResponseWriter, r *http.Request) {
 		if e != nil {
 			message, _ = json.Marshal(Response{"Error"})
 			fmt.Fprintf(w, string(message))
+			return
 		}
 		uploadedBytes, _ := ioutil.ReadAll(file)
 		//Get real filename from redis!(var token)
 
 		fileName := val
-		target, e := os.OpenFile("/storedblob/"+fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		target, e := os.OpenFile("/storedblob/"+fileName, os.O_CREATE|os.O_WRONLY, os.ModeAppend)
 		if e != nil {
 			message, _ = json.Marshal(Response{"Error"})
 			fmt.Fprintf(w, string(message))
+			return
+		}
+		startbyte, _ := strconv.Atoi(r.Header.Get("StartRange"))
+		_, err = target.Seek(int64(startbyte), io.SeekStart)
+		if err != nil {
+			message, _ = json.Marshal(Response{"Error"})
+			fmt.Fprintf(w, string(message))
+			return
 		}
 		target.Write(uploadedBytes)
+		target.Sync() //flush to disk
+		target.Close()
 		if target.Close(); e != nil {
 			message, _ = json.Marshal(Response{"Error"})
 			fmt.Fprintf(w, string(message))
