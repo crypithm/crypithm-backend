@@ -16,12 +16,20 @@ type Defaultresp struct {
 type Fileresponse struct {
 	Message string
 	Files   []interface{}
+	Folders []interface{}
 }
 
 type Filedata struct {
 	Id   string
 	Name string
 	Size string
+}
+
+type Folderdata struct {
+	Id    string
+	Name  string
+	Index string
+	Date  string
 }
 
 func Datahandle(w http.ResponseWriter, r *http.Request) {
@@ -50,6 +58,16 @@ func Datahandle(w http.ResponseWriter, r *http.Request) {
 				var fileJson Filedata
 				fileRows.Scan(&fileJson.Size, &fileJson.Name, &fileJson.Id)
 				returnData.Files = append(returnData.Files, fileJson)
+			}
+			folderRows, _ := db.Query("SELECT name,id,folderindex, date, parent FROM folder WHERE userid=?", uid)
+			//Folderdata
+			for folderRows.Next() {
+				var index string
+				var parent string
+				var folderjson Folderdata
+				folderRows.Scan(&folderjson.Name, &folderjson.Id, &index, &folderjson.Date, &parent)
+				folderjson.Index = parent + " " + index
+				returnData.Folders = append(returnData.Folders, folderjson)
 			}
 			returnData.Message = "Success"
 			returnJSONarr, _ := json.Marshal(returnData)

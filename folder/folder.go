@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
@@ -15,6 +16,11 @@ import (
 
 type Response struct {
 	StatusMessage string
+}
+
+type SucceedResp struct {
+	StatusMessage string
+	Id            string
 }
 
 func Handlefolder(w http.ResponseWriter, r *http.Request) {
@@ -52,12 +58,13 @@ func Handlefolder(w http.ResponseWriter, r *http.Request) {
 				} else {
 					finindx = indx
 				}
-				ins, e := db.Query("INSERT INTO folder (name, folderindex, userid, date, size, parent, id) VALUES (?,?,?,?,?,?,UUID())", foldername, finindx, uid, time.Now().Format("2006-01-02 15:04:05"), 0, strings.Split(curentdirindex, " ")[0])
+				folderId := randstring(15)
+				ins, e := db.Query("INSERT INTO folder (name, folderindex, userid, date, size, parent, id) VALUES (?,?,?,?,?,?,?)", foldername, finindx, uid, time.Now().Format("2006-01-02 15:04:05"), 0, strings.Split(curentdirindex, " ")[0], folderId)
 				if e != nil {
 					fmt.Println(e)
 				}
 				defer ins.Close()
-				dta := Response{"Success"}
+				dta := SucceedResp{"Success", folderId}
 				b, _ = json.Marshal(dta)
 			} else if action == "delete" {
 
@@ -70,4 +77,15 @@ func Handlefolder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "%s", string(b))
+}
+func randstring(length int) string {
+
+	var fin []string
+	str := "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ1234567890"
+	chars := strings.Split(str, "")
+	rand.Seed(time.Now().UnixNano())
+	for i := 0; i < length+1; i++ {
+		fin = append(fin, chars[rand.Intn(26*2+10)])
+	}
+	return strings.Join(fin, "")
 }
