@@ -23,6 +23,7 @@ type Filedata struct {
 	Id   string
 	Name string
 	Size string
+	Dir  string
 }
 
 type Folderdata struct {
@@ -52,21 +53,18 @@ func Datahandle(w http.ResponseWriter, r *http.Request) {
 		} else {
 			var uid string
 			rows.Scan(&uid)
-			fileRows, _ := db.Query("SELECT size,name,id FROM files WHERE userid=?", uid)
+			fileRows, _ := db.Query("SELECT size,name,id, directory FROM files WHERE userid=?", uid)
 			var returnData Fileresponse
 			for fileRows.Next() {
 				var fileJson Filedata
-				fileRows.Scan(&fileJson.Size, &fileJson.Name, &fileJson.Id)
+				fileRows.Scan(&fileJson.Size, &fileJson.Name, &fileJson.Id, &fileJson.Dir)
 				returnData.Files = append(returnData.Files, fileJson)
 			}
-			folderRows, _ := db.Query("SELECT name,id,folderindex, date, parent FROM folder WHERE userid=?", uid)
+			folderRows, _ := db.Query("SELECT name,id, date, parent FROM folder WHERE userid=?", uid)
 			//Folderdata
 			for folderRows.Next() {
-				var index string
-				var parent string
 				var folderjson Folderdata
-				folderRows.Scan(&folderjson.Name, &folderjson.Id, &index, &folderjson.Date, &parent)
-				folderjson.Index = parent + " " + index
+				folderRows.Scan(&folderjson.Name, &folderjson.Id, &folderjson.Date, &folderjson.Index)
 				returnData.Folders = append(returnData.Folders, folderjson)
 			}
 			returnData.Message = "Success"

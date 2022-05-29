@@ -35,7 +35,7 @@ func randstring(length int) string {
 
 func Prehandle(w http.ResponseWriter, r *http.Request) {
 	var message []byte
-	var recievedVals [4]string
+	var recievedVals [5]string
 	if r.Method != "POST" {
 		var resp Response
 		resp.StatusMessage = "Inallowed Method"
@@ -62,6 +62,7 @@ func Prehandle(w http.ResponseWriter, r *http.Request) {
 			recievedVals[1] = r.FormValue("fileName")
 			recievedVals[2] = r.FormValue("chunkKey")
 			recievedVals[3] = r.FormValue("id")
+			recievedVals[4] = r.FormValue("dir")
 
 			for i := 0; i < len(recievedVals); i++ {
 				if len(recievedVals[i]) == 0 {
@@ -80,7 +81,7 @@ func Prehandle(w http.ResponseWriter, r *http.Request) {
 				fmt.Fprintf(w, string(message))
 			}
 			defer file.Close()
-			_, e = db.Exec("INSERT INTO files (size, name,blobkey,id,directory,userid) values (?,?,?,?,?,?)", recievedVals[0], recievedVals[1], recievedVals[2], recievedVals[3], "", uid)
+			_, e = db.Exec("INSERT INTO files (size, name,blobkey,id,directory,userid,savedname) values (?,?,?,?,?,?,?)", recievedVals[0], recievedVals[1], recievedVals[2], recievedVals[3], recievedVals[4], uid, fileName)
 			if e != nil {
 				message, _ = json.Marshal(Response{"dbinsError"})
 				fmt.Fprintf(w, string(message))
@@ -93,7 +94,7 @@ func Prehandle(w http.ResponseWriter, r *http.Request) {
 				DB:       0,
 			})
 			fileToken := randstring(20)
-			e = rdb.Set(ctx, fileToken, fileName, 0).Err()
+			e = rdb.Set(ctx, fileToken, fileName, time.Minute*3).Err()
 			if e != nil {
 				message, _ = json.Marshal(Response{"redisError"})
 				fmt.Fprintf(w, string(message))

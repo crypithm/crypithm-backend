@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/go-redis/redis"
 )
@@ -53,6 +54,7 @@ func Uploadhandle(w http.ResponseWriter, r *http.Request) {
 		//Get real filename from redis!(var token)
 
 		fileName := val
+		rdb.Set(ctx, token, fileName, time.Minute*2)
 		target, e := os.OpenFile("/storedblob/"+fileName, os.O_CREATE|os.O_WRONLY, os.ModeAppend)
 		if e != nil {
 			message, _ = json.Marshal(Response{"Error"})

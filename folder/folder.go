@@ -7,11 +7,11 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 )
 
 type Response struct {
@@ -51,15 +51,8 @@ func Handlefolder(w http.ResponseWriter, r *http.Request) {
 				foldername := r.FormValue("name")
 				var uid string
 				rows.Scan(&uid)
-				indx, _ := strconv.Atoi(strings.Split(curentdirindex, " ")[1])
-				var finindx int
-				if strings.Split(curentdirindex, " ")[0] == "/" {
-					finindx = 0
-				} else {
-					finindx = indx
-				}
 				folderId := randstring(15)
-				ins, e := db.Query("INSERT INTO folder (name, folderindex, userid, date, size, parent, id) VALUES (?,?,?,?,?,?,?)", foldername, finindx, uid, time.Now().Format("2006-01-02 15:04:05"), 0, strings.Split(curentdirindex, " ")[0], folderId)
+				ins, e := db.Query("INSERT INTO folder (name, userid, date, size, parent, id) VALUES (?,?,?,?,?,?)", foldername, uid, time.Now().Format("2006-01-02 15:04:05"), 0, curentdirindex, folderId)
 				if e != nil {
 					fmt.Println(e)
 				}
@@ -69,6 +62,31 @@ func Handlefolder(w http.ResponseWriter, r *http.Request) {
 			} else if action == "delete" {
 
 			} else if action == "move" {
+
+				itemList := r.FormValue("targetObjs")
+				target := r.FormValue("target")
+				var arr []string
+				var uid string
+				rows.Scan(&uid)
+				_ = json.Unmarshal([]byte(itemList), &arr)
+				query1, args, err := sqlx.In("UPDATE folder SET parent=? WHERE id IN (?) AND userid=?", target, arr, uid)
+				if err != nil {
+					dta := Response{"Failed"}
+					b, _ = json.Marshal(dta)
+				}
+				query2, args2, err := sqlx.In("UPDATE files SET directory=? WHERE id IN (?) AND userid=?", target, arr, uid)
+				if err != nil {
+					dta := Response{"Failed"}
+					b, _ = json.Marshal(dta)
+				}
+				_, e := db.Exec(query1, args...)
+				_, e = db.Exec(query2, args2...)
+				if e != nil {
+					dta := Response{"Failed"}
+					b, _ = json.Marshal(dta)
+				}
+				dta := Response{"Success"}
+				b, _ = json.Marshal(dta)
 			}
 		} else {
 			dta := Response{"Failed"}
