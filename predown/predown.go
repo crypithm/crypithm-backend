@@ -1,4 +1,4 @@
-package preupload
+package predown
 
 import (
 	"context"
@@ -17,6 +17,14 @@ import (
 
 type Response struct {
 	StatusMessage string
+}
+
+type NormalResponse struct {
+	StatusMessage string
+	Token         string
+	Size          int
+	Name          string
+	Blobkey       string
 }
 
 func randstring(length int) string {
@@ -42,6 +50,7 @@ func Predown(w http.ResponseWriter, r *http.Request) {
 		if len(token) == 0 {
 			message, _ = json.Marshal(Response{"Error"})
 			fmt.Fprintf(w, string(message))
+			return
 		}
 		db, err := sql.Open("mysql", "crypithmusr:cDP9gNEQmUQt7qXbzU7XJ3Xz4mmcMf@tcp(127.0.0.1:3306)/crypithm")
 		if err != nil {
@@ -54,19 +63,22 @@ func Predown(w http.ResponseWriter, r *http.Request) {
 		if !rows.Next() {
 			message, _ = json.Marshal(Response{"Error"})
 			fmt.Fprintf(w, string(message))
+			return
 		} else {
 			var uid string
 			rows.Scan(&uid)
 			targetFileId := r.FormValue("id")
-			rows, err := db.Query("SELECT savedname FROM files WHERE id=? AND userid=?", targetFileId, uid)
+			rows, err := db.Query("SELECT savedname, size, name, blobkey FROM files WHERE id=? AND userid=?", targetFileId, uid)
 			if err != nil {
 				message, _ = json.Marshal(Response{"Error"})
 				fmt.Fprintf(w, string(message))
+				return
 			}
 			defer rows.Close()
 			if rows.Next() {
-				var savedName string
-				rows.Scan(&savedName)
+				var Size int
+				var savedName, Name, Blobkey string
+				rows.Scan(&savedName, &Size, &Name, &Blobkey)
 				var ctx = context.Background()
 
 				rdb := redis.NewClient(&redis.Options{
@@ -75,12 +87,13 @@ func Predown(w http.ResponseWriter, r *http.Request) {
 					DB:       0,
 				})
 				fileToken := randstring(20)
-				e := rdb.Set(ctx, fileToken, savedName, time.Minute*3).Err()
+				e := rdb.Set(ctx, "view"+fileToken, savedName, time.Minute*3).Err()
 				if e != nil {
 					message, _ = json.Marshal(Response{"redisError"})
 					fmt.Fprintf(w, string(message))
+					return
 				}
-				message, _ = json.Marshal(Response{fileToken})
+				message, _ = json.Marshal(NormalResponse{"Success", fileToken, Size, Name, Blobkey})
 			}
 		}
 
