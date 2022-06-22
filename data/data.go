@@ -56,6 +56,8 @@ func Datahandle(w http.ResponseWriter, r *http.Request) {
 			message, _ := json.Marshal(Defaultresp{"Error"})
 			fmt.Fprintf(w, string(message))
 		} else {
+			var uid string
+			rows.Scan(&uid)
 			if r.FormValue("action") == "getOnlyFolder" {
 				folderRows, _ := db.Query("SELECT name,id, date, parent FROM folder WHERE userid=?", uid)
 				//Folderdata
@@ -69,8 +71,6 @@ func Datahandle(w http.ResponseWriter, r *http.Request) {
 				returnJSONarr, _ := json.Marshal(folders)
 				fmt.Fprintf(w, string(returnJSONarr))
 			} else {
-				var uid string
-				rows.Scan(&uid)
 				fileRows, _ := db.Query("SELECT size,name,id, directory FROM files WHERE userid=?", uid)
 				var returnData Fileresponse
 				for fileRows.Next() {
