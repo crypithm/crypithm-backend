@@ -102,7 +102,7 @@ func randstring(length int) string {
 	str := "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ1234567890"
 	chars := strings.Split(str, "")
 	rand.Seed(time.Now().UnixNano())
-	for i := 0; i < length+1; i++ {
+	for i := 0; i < length; i++ {
 		fin = append(fin, chars[rand.Intn(26*2+10)])
 	}
 	return strings.Join(fin, "")
