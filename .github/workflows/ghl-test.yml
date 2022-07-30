@@ -1,7 +1,7 @@
 name: temporary-deployment
 on:
   push:
-    branches:[main]
+    branches:[publish]
 jobs:
   build:
     name: deploy
