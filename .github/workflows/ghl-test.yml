@@ -1,0 +1,21 @@
+name: temporary-deployment
+on:
+  push:
+    branches:[master]
+jobs:
+  build:
+    name: deploy
+    runs-on: ubuntu-latest
+    steps:
+      uses: appleboy/ssh-action@master
+      host: ${{secrets.HOST}}
+      username: ${{secrets.USERNAME}}
+      key: ${{secrets.KEY}}
+      port: 22
+      script: |
+        sudo su
+        cd /var/publish-dir/crypithm-backend
+        git pull
+        go build server.go
+        mv server /var/www/api
+        systemctl restart crypithmserver
