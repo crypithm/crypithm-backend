@@ -16,9 +16,8 @@ jobs:
         key: ${{ secrets.KEY }}
         port: 22
         script: |
-          sudo su
           cd /var/publish-dir/crypithm-backend
-          git pull
-          go build server.go
-          mv server /var/www/api
-          systemctl restart crypithmserver
+          sudo git pull
+          sudo go build server.go
+          sudo mv server /var/www/api
+          sudo systemctl restart crypithmserver
