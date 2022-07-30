@@ -1,7 +1,8 @@
 name: temporary-deployment
 on:
   push:
-    branches:[main]
+    branches:
+      - main
 jobs:
   build:
     name: deploy
