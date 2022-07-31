@@ -27,8 +27,9 @@ type Filedata struct {
 }
 
 type AppendedFileData struct {
-	Folders []interface{}
-	Message string
+	Folders  []interface{}
+	Username string
+	Message  string
 }
 
 type Folderdata struct {
@@ -50,14 +51,14 @@ func Datahandle(w http.ResponseWriter, r *http.Request) {
 		}
 		token := r.Header.Get("Authorization")
 		defer db.Close()
-		rows, _ := db.Query("SELECT uid FROM user WHERE token=?", token)
+		rows, _ := db.Query("SELECT uid, username FROM user WHERE token=?", token)
 		defer rows.Close()
 		if !rows.Next() {
 			message, _ := json.Marshal(Defaultresp{"Error"})
 			fmt.Fprintf(w, string(message))
 		} else {
-			var uid string
-			rows.Scan(&uid)
+			var uid, username string
+			rows.Scan(&uid, &username)
 			if r.FormValue("action") == "getOnlyFolder" {
 				folderRows, _ := db.Query("SELECT name,id, date, parent FROM folder WHERE userid=?", uid)
 				//Folderdata
@@ -67,6 +68,7 @@ func Datahandle(w http.ResponseWriter, r *http.Request) {
 					folderRows.Scan(&folderjson.Name, &folderjson.Id, &folderjson.Date, &folderjson.Index)
 					folders.Folders = append(folders.Folders, folderjson)
 				}
+				folders.Username = username
 				folders.Message = "Success"
 				returnJSONarr, _ := json.Marshal(folders)
 				fmt.Fprintf(w, string(returnJSONarr))
