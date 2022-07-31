@@ -14,9 +14,10 @@ type Defaultresp struct {
 	Message string
 }
 type Fileresponse struct {
-	Message string
-	Files   []interface{}
-	Folders []interface{}
+	Message  string
+	Username string
+	Files    []interface{}
+	Folders  []interface{}
 }
 
 type Filedata struct {
@@ -27,9 +28,8 @@ type Filedata struct {
 }
 
 type AppendedFileData struct {
-	Folders  []interface{}
-	Username string
-	Message  string
+	Folders []interface{}
+	Message string
 }
 
 type Folderdata struct {
@@ -68,13 +68,13 @@ func Datahandle(w http.ResponseWriter, r *http.Request) {
 					folderRows.Scan(&folderjson.Name, &folderjson.Id, &folderjson.Date, &folderjson.Index)
 					folders.Folders = append(folders.Folders, folderjson)
 				}
-				folders.Username = username
 				folders.Message = "Success"
 				returnJSONarr, _ := json.Marshal(folders)
 				fmt.Fprintf(w, string(returnJSONarr))
 			} else {
 				fileRows, _ := db.Query("SELECT size,name,id, directory FROM files WHERE userid=?", uid)
 				var returnData Fileresponse
+				returnData.Username = username
 				for fileRows.Next() {
 					var fileJson Filedata
 					fileRows.Scan(&fileJson.Size, &fileJson.Name, &fileJson.Id, &fileJson.Dir)
