@@ -2,7 +2,7 @@ name: temporary-deployment
 on:
   push:
     branches:
-      - main
+      - publish
 jobs:
   build:
     name: deploy

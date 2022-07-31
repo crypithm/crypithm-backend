@@ -122,6 +122,7 @@ func ShareHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
-
+		message, _ := json.Marshal(Defaultresp{"Error"})
+		fmt.Fprintf(w, string(message))
 	}
 }
