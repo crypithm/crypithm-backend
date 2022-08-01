@@ -72,7 +72,7 @@ func ShareHandler(w http.ResponseWriter, r *http.Request) {
 					var key string
 					db.QueryRow("SELECT blobkey from files WHERE userid=? AND id=?", uid, originId).Scan(&key)
 					shareToken := randstring(20)
-					Id := randstring(11)
+					Id := randstring(10)
 					e := rdb.Set(ctx, shareToken, Id+","+originId, time.Minute*3).Err()
 					if e != nil {
 						message, _ := json.Marshal(Defaultresp{"Error"})
@@ -110,12 +110,14 @@ func ShareHandler(w http.ResponseWriter, r *http.Request) {
 					if e != nil {
 						message, _ := json.Marshal(Defaultresp{"Error"})
 						fmt.Fprintf(w, string(message))
+						return
 					}
 					message, _ := json.Marshal(Defaultresp{"Success"})
 					fmt.Fprintf(w, string(message))
 				} else {
 					message, _ := json.Marshal(Defaultresp{"Error"})
 					fmt.Fprintf(w, string(message))
+					return
 				}
 			}
 
