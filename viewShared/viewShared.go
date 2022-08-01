@@ -67,7 +67,7 @@ func SharedHandle(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var savedName string
-		err = db.QueryRow("SELECT savedname from user WHERE userid=? AND id=?", uid, originId).Scan(&savedName)
+		err = db.QueryRow("SELECT savedname from files WHERE userid=? AND id=?", uid, originId).Scan(&savedName)
 
 		token := randstring(16)
 
