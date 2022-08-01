@@ -11,6 +11,7 @@ import (
 	"./preupload"
 	"./share"
 	"./upload"
+	"./viewShared"
 )
 
 func main() {
@@ -21,6 +22,7 @@ func main() {
 	http.HandleFunc("/api/predown", predown.Predown)
 	http.HandleFunc("/api/download", download.Downloader)
 	http.HandleFunc("/api/share", share.ShareHandler)
+	http.HandleFunc("/api/viewshared", viewShared.SharedHandle)
 	err := http.ListenAndServe(":22048", nil)
 	if err != nil {
 		fmt.Println(err)
