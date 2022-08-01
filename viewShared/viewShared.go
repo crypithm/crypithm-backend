@@ -54,20 +54,23 @@ func SharedHandle(w http.ResponseWriter, r *http.Request) {
 		id := r.FormValue("id")
 		db, err := sql.Open("mysql", "crypithmusr:cDP9gNEQmUQt7qXbzU7XJ3Xz4mmcMf@tcp(127.0.0.1:3306)/crypithm")
 		if err != nil {
-			message, _ := json.Marshal(Defaultresp{"Error"})
+			message, _ := json.Marshal(Defaultresp{"ConnError"})
 			fmt.Fprintf(w, string(message))
+			return
 		}
 
 		var originId, fileName, fileSize, sharedKey, uid string
 		var showName bool
-		err = db.QueryRow("SELECT originId, fileName, fileSize, sharedKey,uid, showName from shared WHERE mappedId=?", id).Scan(&originId, &fileName, &fileSize, &sharedKey, &uid, &showName)
+		err = db.QueryRow("SELECT originId, fileName, fileSize, sharedKey,uid, showName FROM shared WHERE mappedId=?", id).Scan(&originId, &fileName, &fileSize, &sharedKey, &uid, &showName)
 		if err != nil {
-			message, _ := json.Marshal(Defaultresp{"Error"})
+
+			message, _ := json.Marshal(Defaultresp{"QueryError"})
 			fmt.Fprintf(w, string(message))
+			return
 		}
 
 		var savedName string
-		err = db.QueryRow("SELECT savedname from files WHERE userid=? AND id=?", uid, originId).Scan(&savedName)
+		err = db.QueryRow("SELECT savedname FROM files WHERE userid=? AND id=?", uid, originId).Scan(&savedName)
 
 		token := randstring(16)
 
@@ -86,5 +89,6 @@ func SharedHandle(w http.ResponseWriter, r *http.Request) {
 	} else {
 		message, _ := json.Marshal(Defaultresp{"Invalid Method"})
 		fmt.Fprintf(w, string(message))
+		return
 	}
 }
