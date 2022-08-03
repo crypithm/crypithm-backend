@@ -75,7 +75,7 @@ func SharedHandle(w http.ResponseWriter, r *http.Request) {
 		token := randstring(16)
 
 		var ctx = context.Background()
-		rdb.Set(ctx, "view"+token, savedName, time.Minute*3).Err()
+		rdb.Set(ctx, "view"+token, savedName, time.Minute*1).Err()
 
 		if showName == true {
 			var username string
