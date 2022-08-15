@@ -40,6 +40,8 @@ func Prehandle(w http.ResponseWriter, r *http.Request) {
 		var resp Response
 		resp.StatusMessage = "Inallowed Method"
 		message, _ = json.Marshal(resp)
+		fmt.Fprintf(w, string(message))
+		return
 	} else {
 		token := r.Header.Get("Authorization")
 		if len(token) == 0 {
@@ -57,56 +59,54 @@ func Prehandle(w http.ResponseWriter, r *http.Request) {
 		if !rows.Next() {
 			message, _ = json.Marshal(Response{"Error"})
 			fmt.Fprintf(w, string(message))
-		} else {
-			recievedVals[0] = r.FormValue("fileSize")
-			recievedVals[1] = r.FormValue("fileName")
-			recievedVals[2] = r.FormValue("chunkKey")
-			recievedVals[3] = r.FormValue("id")
-			recievedVals[4] = r.FormValue("dir")
+		}
+		recievedVals[0] = r.FormValue("fileSize")
+		recievedVals[1] = r.FormValue("fileName")
+		recievedVals[2] = r.FormValue("chunkKey")
+		recievedVals[3] = r.FormValue("id")
+		recievedVals[4] = r.FormValue("dir")
 
-			if len(recievedVals[3]) == 11 && (recievedVals[4] == "/ 0" || len(recievedVals[4]) == 15) {
-				for i := 0; i < len(recievedVals); i++ {
-					if len(recievedVals[i]) == 0 {
-						message, _ = json.Marshal(Response{"Error"})
-						fmt.Fprintf(w, string(message))
-						break
-					}
-				}
-				var uid string
-				rows.Scan(&uid)
-
-				fileName := randstring(16)
-				file, e := os.Create("/storedblob/" + fileName)
-				if e != nil {
-					message, _ = json.Marshal(Response{"saveError"})
-					fmt.Fprintf(w, string(message))
-				}
-				defer file.Close()
-				_, e = db.Exec("INSERT INTO files (size, name,blobkey,id,directory,userid,savedname) values (?,?,?,?,?,?,?)", recievedVals[0], recievedVals[1], recievedVals[2], recievedVals[3], recievedVals[4], uid, fileName)
-				if e != nil {
-					message, _ = json.Marshal(Response{"Error"})
-					fmt.Fprintf(w, string(message))
-				}
-				var ctx = context.Background()
-
-				rdb := redis.NewClient(&redis.Options{
-					Addr:     "localhost:6379",
-					Password: "",
-					DB:       0,
-				})
-				fileToken := randstring(20)
-				e = rdb.Set(ctx, fileToken, fileName, time.Minute*3).Err()
-				if e != nil {
-					message, _ = json.Marshal(Response{"Error"})
-					fmt.Fprintf(w, string(message))
-				}
-				message, _ = json.Marshal(Response{fileToken})
-			} else {
-				message, _ = json.Marshal(Response{"Invalid Data Recieved"})
+		if !(len(recievedVals[3]) == 11 && (recievedVals[4] == "/ 0" || len(recievedVals[4]) == 15)) {
+			message, _ = json.Marshal(Response{"Invalid Data Recieved"})
+			fmt.Fprintf(w, string(message))
+			return
+		}
+		for i := 0; i < len(recievedVals); i++ {
+			if len(recievedVals[i]) == 0 {
+				message, _ = json.Marshal(Response{"Error"})
 				fmt.Fprintf(w, string(message))
+				break
 			}
 		}
+		var uid string
+		rows.Scan(&uid)
 
+		fileName := randstring(16)
+		file, e := os.Create("/storedblob/" + fileName)
+		if e != nil {
+			message, _ = json.Marshal(Response{"saveError"})
+			fmt.Fprintf(w, string(message))
+		}
+		defer file.Close()
+		_, e = db.Exec("INSERT INTO files (size, name,blobkey,id,directory,userid,savedname) values (?,?,?,?,?,?,?)", recievedVals[0], recievedVals[1], recievedVals[2], recievedVals[3], recievedVals[4], uid, fileName)
+		if e != nil {
+			message, _ = json.Marshal(Response{"Error"})
+			fmt.Fprintf(w, string(message))
+		}
+		var ctx = context.Background()
+
+		rdb := redis.NewClient(&redis.Options{
+			Addr:     "localhost:6379",
+			Password: "",
+			DB:       0,
+		})
+		fileToken := randstring(20)
+		e = rdb.Set(ctx, fileToken, fileName, time.Minute*3).Err()
+		if e != nil {
+			message, _ = json.Marshal(Response{"Error"})
+			fmt.Fprintf(w, string(message))
+		}
+		message, _ = json.Marshal(Response{fileToken})
 	}
 	fmt.Fprintf(w, string(message))
 }

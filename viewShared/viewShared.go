@@ -82,9 +82,11 @@ func SharedHandle(w http.ResponseWriter, r *http.Request) {
 			err = db.QueryRow("SELECT username from user WHERE uid=?", uid).Scan(&username)
 			message, _ := json.Marshal(Namedresp{username, fileName, fileSize, sharedKey, token})
 			fmt.Fprintf(w, string(message))
+			return
 		} else {
 			message, _ := json.Marshal(Noname{fileName, fileSize, sharedKey, token})
 			fmt.Fprintf(w, string(message))
+			return
 		}
 	} else {
 		message, _ := json.Marshal(Defaultresp{"Invalid Method"})

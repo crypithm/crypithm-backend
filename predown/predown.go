@@ -45,58 +45,57 @@ func Predown(w http.ResponseWriter, r *http.Request) {
 		var resp Response
 		resp.StatusMessage = "Inallowed Method"
 		message, _ = json.Marshal(resp)
-	} else {
-		token := r.Header.Get("Authorization")
-		if len(token) == 0 {
-			message, _ = json.Marshal(Response{"Error"})
+		fmt.Fprintf(w, string(message))
+		return
+	}
+	token := r.Header.Get("Authorization")
+	if len(token) == 0 {
+		message, _ = json.Marshal(Response{"Error"})
+		fmt.Fprintf(w, string(message))
+		return
+	}
+	db, err := sql.Open("mysql", "crypithmusr:cDP9gNEQmUQt7qXbzU7XJ3Xz4mmcMf@tcp(127.0.0.1:3306)/crypithm")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	rows, err := db.Query("SELECT uid FROM user WHERE token=?", token)
+	defer rows.Close()
+	if !rows.Next() {
+		message, _ = json.Marshal(Response{"Error"})
+		fmt.Fprintf(w, string(message))
+		return
+	}
+	var uid string
+	rows.Scan(&uid)
+	targetFileId := r.FormValue("id")
+	rows, err = db.Query("SELECT savedname, size, name, blobkey FROM files WHERE id=? AND userid=?", targetFileId, uid)
+	if err != nil {
+		message, _ = json.Marshal(Response{"Error"})
+		fmt.Fprintf(w, string(message))
+		return
+	}
+	defer rows.Close()
+	if rows.Next() {
+		var Size int
+		var savedName, Name, Blobkey string
+		rows.Scan(&savedName, &Size, &Name, &Blobkey)
+		var ctx = context.Background()
+
+		rdb := redis.NewClient(&redis.Options{
+			Addr:     "localhost:6379",
+			Password: "",
+			DB:       0,
+		})
+		fileToken := randstring(20)
+		e := rdb.Set(ctx, "view"+fileToken, savedName, time.Minute*3).Err()
+		if e != nil {
+			message, _ = json.Marshal(Response{"redisError"})
 			fmt.Fprintf(w, string(message))
 			return
 		}
-		db, err := sql.Open("mysql", "crypithmusr:cDP9gNEQmUQt7qXbzU7XJ3Xz4mmcMf@tcp(127.0.0.1:3306)/crypithm")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer db.Close()
-
-		rows, err := db.Query("SELECT uid FROM user WHERE token=?", token)
-		defer rows.Close()
-		if !rows.Next() {
-			message, _ = json.Marshal(Response{"Error"})
-			fmt.Fprintf(w, string(message))
-			return
-		} else {
-			var uid string
-			rows.Scan(&uid)
-			targetFileId := r.FormValue("id")
-			rows, err := db.Query("SELECT savedname, size, name, blobkey FROM files WHERE id=? AND userid=?", targetFileId, uid)
-			if err != nil {
-				message, _ = json.Marshal(Response{"Error"})
-				fmt.Fprintf(w, string(message))
-				return
-			}
-			defer rows.Close()
-			if rows.Next() {
-				var Size int
-				var savedName, Name, Blobkey string
-				rows.Scan(&savedName, &Size, &Name, &Blobkey)
-				var ctx = context.Background()
-
-				rdb := redis.NewClient(&redis.Options{
-					Addr:     "localhost:6379",
-					Password: "",
-					DB:       0,
-				})
-				fileToken := randstring(20)
-				e := rdb.Set(ctx, "view"+fileToken, savedName, time.Minute*3).Err()
-				if e != nil {
-					message, _ = json.Marshal(Response{"redisError"})
-					fmt.Fprintf(w, string(message))
-					return
-				}
-				message, _ = json.Marshal(NormalResponse{"Success", fileToken, Size, Name, Blobkey})
-			}
-		}
-
+		message, _ = json.Marshal(NormalResponse{"Success", fileToken, Size, Name, Blobkey})
 	}
 	fmt.Fprintf(w, string(message))
 }

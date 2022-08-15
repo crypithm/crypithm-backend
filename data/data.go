@@ -44,53 +44,53 @@ func Datahandle(w http.ResponseWriter, r *http.Request) {
 		message, _ := json.Marshal(Defaultresp{"Inallowed Method"})
 		fmt.Fprintf(w, string(message))
 		return
+	}
+	db, err := sql.Open("mysql", "crypithmusr:cDP9gNEQmUQt7qXbzU7XJ3Xz4mmcMf@tcp(127.0.0.1:3306)/crypithm")
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	token := r.Header.Get("Authorization")
+	defer db.Close()
+	rows, _ := db.Query("SELECT uid, username FROM user WHERE token=?", token)
+	defer rows.Close()
+	if !rows.Next() {
+		message, _ := json.Marshal(Defaultresp{"Error"})
+		fmt.Fprintf(w, string(message))
+		return
+	}
+	var uid, username string
+	rows.Scan(&uid, &username)
+	if r.FormValue("action") == "getOnlyFolder" {
+		folderRows, _ := db.Query("SELECT name,id, date, parent FROM folder WHERE userid=?", uid)
+		//Folderdata
+		var folders AppendedFileData
+		for folderRows.Next() {
+			var folderjson Folderdata
+			folderRows.Scan(&folderjson.Name, &folderjson.Id, &folderjson.Date, &folderjson.Index)
+			folders.Folders = append(folders.Folders, folderjson)
+		}
+		folders.Message = "Success"
+		returnJSONarr, _ := json.Marshal(folders)
+		fmt.Fprintf(w, string(returnJSONarr))
 	} else {
-		db, err := sql.Open("mysql", "crypithmusr:cDP9gNEQmUQt7qXbzU7XJ3Xz4mmcMf@tcp(127.0.0.1:3306)/crypithm")
-		if err != nil {
-			log.Fatal(err)
+		fileRows, _ := db.Query("SELECT size,name,id, directory FROM files WHERE userid=?", uid)
+		var returnData Fileresponse
+		returnData.Username = username
+		for fileRows.Next() {
+			var fileJson Filedata
+			fileRows.Scan(&fileJson.Size, &fileJson.Name, &fileJson.Id, &fileJson.Dir)
+			returnData.Files = append(returnData.Files, fileJson)
 		}
-		token := r.Header.Get("Authorization")
-		defer db.Close()
-		rows, _ := db.Query("SELECT uid, username FROM user WHERE token=?", token)
-		defer rows.Close()
-		if !rows.Next() {
-			message, _ := json.Marshal(Defaultresp{"Error"})
-			fmt.Fprintf(w, string(message))
-		} else {
-			var uid, username string
-			rows.Scan(&uid, &username)
-			if r.FormValue("action") == "getOnlyFolder" {
-				folderRows, _ := db.Query("SELECT name,id, date, parent FROM folder WHERE userid=?", uid)
-				//Folderdata
-				var folders AppendedFileData
-				for folderRows.Next() {
-					var folderjson Folderdata
-					folderRows.Scan(&folderjson.Name, &folderjson.Id, &folderjson.Date, &folderjson.Index)
-					folders.Folders = append(folders.Folders, folderjson)
-				}
-				folders.Message = "Success"
-				returnJSONarr, _ := json.Marshal(folders)
-				fmt.Fprintf(w, string(returnJSONarr))
-			} else {
-				fileRows, _ := db.Query("SELECT size,name,id, directory FROM files WHERE userid=?", uid)
-				var returnData Fileresponse
-				returnData.Username = username
-				for fileRows.Next() {
-					var fileJson Filedata
-					fileRows.Scan(&fileJson.Size, &fileJson.Name, &fileJson.Id, &fileJson.Dir)
-					returnData.Files = append(returnData.Files, fileJson)
-				}
-				folderRows, _ := db.Query("SELECT name,id, date, parent FROM folder WHERE userid=?", uid)
-				//Folderdata
-				for folderRows.Next() {
-					var folderjson Folderdata
-					folderRows.Scan(&folderjson.Name, &folderjson.Id, &folderjson.Date, &folderjson.Index)
-					returnData.Folders = append(returnData.Folders, folderjson)
-				}
-				returnData.Message = "Success"
-				returnJSONarr, _ := json.Marshal(returnData)
-				fmt.Fprintf(w, string(returnJSONarr))
-			}
+		folderRows, _ := db.Query("SELECT name,id, date, parent FROM folder WHERE userid=?", uid)
+		//Folderdata
+		for folderRows.Next() {
+			var folderjson Folderdata
+			folderRows.Scan(&folderjson.Name, &folderjson.Id, &folderjson.Date, &folderjson.Index)
+			returnData.Folders = append(returnData.Folders, folderjson)
 		}
+		returnData.Message = "Success"
+		returnJSONarr, _ := json.Marshal(returnData)
+		fmt.Fprintf(w, string(returnJSONarr))
 	}
 }
