@@ -86,7 +86,7 @@ func Predown(w http.ResponseWriter, r *http.Request) {
 
 		rdb := redis.NewClient(&redis.Options{
 			Addr:     "140.238.219.8:6379",
-			Password: "69GUaedM9MNApmU5wugCz5T7gdBa6Ka",
+			Password: "69GUaedM9MNApmU5wugCz5T7gdBa6K",
 			DB:       0,
 		})
 		fileToken := randstring(20)
