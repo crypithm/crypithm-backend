@@ -49,7 +49,7 @@ func Prehandle(w http.ResponseWriter, r *http.Request) {
 	} else {
 		token := r.Header.Get("Authorization")
 		if len(token) == 0 {
-			message, _ = json.Marshal(Response{"Error"})
+			message, _ = json.Marshal(Response{"NoAuthError"})
 			fmt.Fprintf(w, string(message))
 		}
 		db, err := sql.Open("mysql", "crypithmusr:cDP9gNEQmUQt7qXbzU7XJ3Xz4mmcMf@tcp(127.0.0.1:3306)/crypithm")
@@ -61,7 +61,7 @@ func Prehandle(w http.ResponseWriter, r *http.Request) {
 		rows, err := db.Query("SELECT uid FROM user WHERE token=?", token)
 		defer rows.Close()
 		if !rows.Next() {
-			message, _ = json.Marshal(Response{"Error"})
+			message, _ = json.Marshal(Response{"NoRowError"})
 			fmt.Fprintf(w, string(message))
 		}
 		recievedVals[0] = r.FormValue("fileSize")
@@ -77,7 +77,7 @@ func Prehandle(w http.ResponseWriter, r *http.Request) {
 		}
 		for i := 0; i < len(recievedVals); i++ {
 			if len(recievedVals[i]) == 0 {
-				message, _ = json.Marshal(Response{"Error"})
+				message, _ = json.Marshal(Response{"DataError"})
 				fmt.Fprintf(w, string(message))
 				break
 			}
@@ -89,7 +89,7 @@ func Prehandle(w http.ResponseWriter, r *http.Request) {
 
 		_, e := db.Exec("INSERT INTO files (size, name,blobkey,id,directory,userid,savedname) values (?,?,?,?,?,?,?)", recievedVals[0], recievedVals[1], recievedVals[2], recievedVals[3], recievedVals[4], uid, fileName)
 		if e != nil {
-			message, _ = json.Marshal(Response{"Error"})
+			message, _ = json.Marshal(Response{"DbError"})
 			fmt.Fprintf(w, string(message))
 			return
 		}
@@ -103,7 +103,7 @@ func Prehandle(w http.ResponseWriter, r *http.Request) {
 		fileToken := randstring(20)
 		e = rdb.Set(ctx, fileToken, fileName, time.Minute*3).Err()
 		if e != nil {
-			message, _ = json.Marshal(Response{"Error"})
+			message, _ = json.Marshal(Response{"RdbError"})
 			fmt.Fprintf(w, string(message))
 			return
 		}
