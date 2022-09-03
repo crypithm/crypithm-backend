@@ -101,7 +101,7 @@ func Prehandle(w http.ResponseWriter, r *http.Request) {
 			DB:       0,
 		})
 		fileToken := randstring(20)
-		e = rdb.Set(ctx, fileToken, fileName, time.Minute*3).Err()
+		e = rdb.Set(ctx, fileToken, fileName, time.Minute*3).Err()//a
 		if e != nil {
 			message, _ = json.Marshal(Response{"RdbError"})
 			fmt.Fprintf(w, string(message))
