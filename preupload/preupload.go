@@ -86,17 +86,17 @@ func Prehandle(w http.ResponseWriter, r *http.Request) {
 		var uid string
 		rows.Scan(&uid)
 
-		fileName := randstring(16)
-		file, e := os.Create("/storedblob/" + fileName)
 		if e != nil {
 			message, _ = json.Marshal(Response{"saveError"})
 			fmt.Fprintf(w, string(message))
+			return
 		}
 		defer file.Close()
 		_, e = db.Exec("INSERT INTO files (size, name,blobkey,id,directory,userid,savedname) values (?,?,?,?,?,?,?)", recievedVals[0], recievedVals[1], recievedVals[2], recievedVals[3], recievedVals[4], uid, fileName)
 		if e != nil {
 			message, _ = json.Marshal(Response{"Error"})
 			fmt.Fprintf(w, string(message))
+			return
 		}
 		var ctx = context.Background()
 
@@ -110,6 +110,7 @@ func Prehandle(w http.ResponseWriter, r *http.Request) {
 		if e != nil {
 			message, _ = json.Marshal(Response{"Error"})
 			fmt.Fprintf(w, string(message))
+			return
 		}
 		message, _ = json.Marshal(SuccessResponse{fileToken, "st-ch1"})
 	}
