@@ -1,6 +1,7 @@
 package preupload
 
 import (
+	"fmt"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -102,6 +103,7 @@ func Prehandle(w http.ResponseWriter, r *http.Request) {
 		})
 		fileToken := randstring(20)
 		e = rdb.Set(ctx, fileToken, fileName, time.Minute*3).Err()
+		fmt.Println(e)
 		if e != nil {
 			message, _ = json.Marshal(Response{"RdbError"})
 			fmt.Fprintf(w, string(message))
