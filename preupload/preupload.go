@@ -1,7 +1,6 @@
 package preupload
 
 import (
-	"fmt"
 	"context"
 	"database/sql"
 	"encoding/json"
