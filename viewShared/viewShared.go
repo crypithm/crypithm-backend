@@ -24,6 +24,7 @@ type Namedresp struct {
 	Size     string
 	Key      string
 	Token    string
+	Rqid string
 }
 
 type Noname struct {
@@ -31,6 +32,7 @@ type Noname struct {
 	Size  string
 	Key   string
 	Token string
+	Rqid string
 }
 
 func randstring(length int) string {
@@ -47,8 +49,8 @@ func randstring(length int) string {
 func SharedHandle(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		rdb := redis.NewClient(&redis.Options{
-			Addr:     "localhost:6379",
-			Password: "",
+			Addr:     "140.238.219.8:6379",
+			Password: "69GUaedM9MNApmU5wugCz5T7gdBa6Ka",
 			DB:       0,
 		})
 		id := r.FormValue("id")
@@ -80,11 +82,11 @@ func SharedHandle(w http.ResponseWriter, r *http.Request) {
 		if showName == true {
 			var username string
 			err = db.QueryRow("SELECT username from user WHERE uid=?", uid).Scan(&username)
-			message, _ := json.Marshal(Namedresp{username, fileName, fileSize, sharedKey, token})
+			message, _ := json.Marshal(Namedresp{username, fileName, fileSize, sharedKey, token, "st-ch1"})
 			fmt.Fprintf(w, string(message))
 			return
 		} else {
-			message, _ := json.Marshal(Noname{fileName, fileSize, sharedKey, token})
+			message, _ := json.Marshal(Noname{fileName, fileSize, sharedKey, token, "st-ch1"})
 			fmt.Fprintf(w, string(message))
 			return
 		}

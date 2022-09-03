@@ -25,6 +25,7 @@ type NormalResponse struct {
 	Size          int
 	Name          string
 	Blobkey       string
+	Rqid string
 }
 
 func randstring(length int) string {
@@ -84,8 +85,8 @@ func Predown(w http.ResponseWriter, r *http.Request) {
 		var ctx = context.Background()
 
 		rdb := redis.NewClient(&redis.Options{
-			Addr:     "localhost:6379",
-			Password: "",
+			Addr:     "140.238.219.8:6379",
+			Password: "69GUaedM9MNApmU5wugCz5T7gdBa6Ka",
 			DB:       0,
 		})
 		fileToken := randstring(20)
@@ -95,7 +96,7 @@ func Predown(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, string(message))
 			return
 		}
-		message, _ = json.Marshal(NormalResponse{"Success", fileToken, Size, Name, Blobkey})
+		message, _ = json.Marshal(NormalResponse{"Success", fileToken, Size, Name, Blobkey, "st-ch1"})
 	}
 	fmt.Fprintf(w, string(message))
 }

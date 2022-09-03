@@ -21,6 +21,11 @@ type Response struct {
 	StatusMessage string
 }
 
+type SuccessResponse struct {
+	StatusMessage string
+	Rqid string
+}
+
 func randstring(length int) string {
 
 	var fin []string
@@ -96,8 +101,8 @@ func Prehandle(w http.ResponseWriter, r *http.Request) {
 		var ctx = context.Background()
 
 		rdb := redis.NewClient(&redis.Options{
-			Addr:     "localhost:6379",
-			Password: "",
+			Addr:     "140.238.219.8:6379",
+			Password: "69GUaedM9MNApmU5wugCz5T7gdBa6Ka",
 			DB:       0,
 		})
 		fileToken := randstring(20)
@@ -106,7 +111,7 @@ func Prehandle(w http.ResponseWriter, r *http.Request) {
 			message, _ = json.Marshal(Response{"Error"})
 			fmt.Fprintf(w, string(message))
 		}
-		message, _ = json.Marshal(Response{fileToken})
+		message, _ = json.Marshal(SuccessResponse{fileToken, "st-ch1"})
 	}
 	fmt.Fprintf(w, string(message))
 }
