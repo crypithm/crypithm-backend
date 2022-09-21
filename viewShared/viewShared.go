@@ -50,7 +50,7 @@ func SharedHandle(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		rdb := redis.NewClient(&redis.Options{
 			Addr:     "140.238.219.8:6379",
-			Password: "69GUaedM9MNApmU5wugCz5T7gdBa6Ka",
+			Password: "69GUaedM9MNApmU5wugCz5T7gdBa6K",
 			DB:       0,
 		})
 		id := r.FormValue("id")
@@ -74,7 +74,7 @@ func SharedHandle(w http.ResponseWriter, r *http.Request) {
 		var savedName string
 		err = db.QueryRow("SELECT savedname FROM files WHERE userid=? AND id=?", uid, originId).Scan(&savedName)
 
-		token := randstring(16)
+		token := randstring(20)
 
 		var ctx = context.Background()
 		e := rdb.Set(ctx, "view"+token, savedName, time.Minute*1).Err()
