@@ -77,8 +77,12 @@ func SharedHandle(w http.ResponseWriter, r *http.Request) {
 		token := randstring(16)
 
 		var ctx = context.Background()
-		rdb.Set(ctx, "view"+token, savedName, time.Minute*1).Err()
-
+		e := rdb.Set(ctx, "view"+token, savedName, time.Minute*1).Err()
+		if e != nil {
+			message, _ = json.Marshal(Response{"redisError"})
+			fmt.Fprintf(w, string(message))
+			return
+		}
 		if showName == true {
 			var username string
 			err = db.QueryRow("SELECT username from user WHERE uid=?", uid).Scan(&username)
