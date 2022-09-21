@@ -79,7 +79,7 @@ func SharedHandle(w http.ResponseWriter, r *http.Request) {
 		var ctx = context.Background()
 		e := rdb.Set(ctx, "view"+token, savedName, time.Minute*1).Err()
 		if e != nil {
-			message, _ = json.Marshal(Response{"redisError"})
+			message, _ := json.Marshal(Defaultresp{"RedisError"})
 			fmt.Fprintf(w, string(message))
 			return
 		}
